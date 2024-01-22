@@ -1,30 +1,46 @@
+// Import necessary packages and modules
 import express from "express";
 import axios from "axios";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 
+// Load environment variables from .env file
 dotenv.config();
+
+// Retrieve API key from environment variables
 const apiKey = process.env.OPENWEATHER_API_KEY;
+
+// Create an Express application
 const app = express();
 const port = 3000;
 const apiURL = "https://api.openweathermap.org/data/2.5/weather?units=metric";
 
+// Set up static files and body parser middleware
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set the view engine to EJS
 app.set("view engine", "ejs");
 
+// Handle GET requests to the root ("/") route
 app.get("/", async (req, res) => {
   try {
+    // Extract the city from the query parameter
     const city = req.query.city;
+
     // Check if the city is not provided
     if (!city) {
+      // Render the view with no error message
       return res.render("index.ejs", {
         errorMessage: undefined,
       });
     }
+
+    // Make an API request to OpenWeatherMap
     const response = await axios.get(`${apiURL}&q=${city}&appid=${apiKey}`);
     const data = response.data;
 
+    // Determine the weather icon based on weather conditions
     let weatherIcon;
     switch (data.weather[0].main) {
       case "Clouds":
@@ -46,6 +62,7 @@ app.get("/", async (req, res) => {
         weatherIcon = "images/default.png"; // Default image for unknown conditions
     }
 
+    // Render the view with weather data and no error message
     res.render("index.ejs", {
       city: data.name,
       temp: Math.round(data.main.temp),
@@ -55,8 +72,10 @@ app.get("/", async (req, res) => {
       errorMessage: undefined,
     });
   } catch (error) {
+    // Handle errors during the API request
     console.error("Error fetching weather data:", error);
 
+    // Determine and set the appropriate error message
     let errorMessage;
     if (error.response && error.response.status === 404) {
       errorMessage = "City not found. Please enter a valid city name.";
@@ -64,54 +83,14 @@ app.get("/", async (req, res) => {
       errorMessage = "Error fetching weather data. Please try again later.";
     }
 
+    // Render the view with the error message
     res.render("index.ejs", {
       errorMessage: errorMessage,
     });
   }
 });
 
+// Start the Express server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-
-
-
-// const apiKey = "3534bb8e7c749b354c4d78a76a2b94bd";
-// const apiURL = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=pretoria";
-
-// const searchBox = document.querySelector(".search input");
-// const searchBtn = document.querySelector(".search button");
-// const weatherIcon = document.querySelector(".weather-icon");
-
-// async function checkWeather(city) {
-//   const response = await fetch(`${apiURL}&q=${city}&appid=${apiKey}`);
-//   const data = await response.json();
-
-//   console.log(data);
-
-//   document.querySelector(".city").innerHTML = data.name;
-//   document.querySelector(".temp").innerHTML = Math.round(data.main.temp) + "°c";
-//   document.querySelector(".humidity").innerHTML = data.main.humidity + "%";
-//   document.querySelector(".wind").innerHTML = data.wind.speed + "Km/h";
-
-//   if (data.weather[0].main == "Clouds") {
-//     weatherIcon.src = "images/cloudy.png";
-//   }
-//   else if (data.weather[0].main == "Clear") {
-//     weatherIcon.src = "images/clear.png";
-//   }
-//   else if (data.weather[0].main == "Rain") {
-//     weatherIcon.src = "images/rain.png";
-//   }
-//   else if (data.weather[0].main == "Thunder") {
-//     weatherIcon.src = "images/thunder.png";
-//   }
-//   else if (data.weather[0].main == "Fog") {
-//     weatherIcon.src = "images/fog.png";
-//   }
-// }
-
-
-// searchBtn.addEventListener("click", ()=>{
-//   checkWeather(searchBox.value);
-// })
